@@ -52,8 +52,11 @@ void SerialInterface::doThreadedJob()
 #ifdef qqdebug
     qDebug() << "New Serial Port Object Has Been Created !!!" << endl;
 #endif
+    quint64 ithr = 0;
     while (mIsThreaded)
     {
+        ++ithr;
+
         qApp->processEvents();        
         if (mSerialPort.portName() != mPortName)
         {            
@@ -85,16 +88,28 @@ void SerialInterface::doThreadedJob()
                 return;
             }            
         }       
+        quint64 icon = 0;
         while ((mCommandList.size() != 0) && mIsContinuous)
         {
+            ++icon;
+#ifdef qqdebug
+            qDebug() << "inside continuous loop " << icon << endl;
+#endif
             //Fetch the most priority message and its corresponding priority value
             mutex.lock();
-            MsgSent = mCommandList.constEnd().value();
-            mCommandList.remove(mCommandList.constEnd().key(), MsgSent);
-            emit BufferCount(mCommandList.size());
+            mCommandListCItr = -- mCommandList.constEnd();
+            MsgSent = mCommandListCItr.value();
+            mCommandList.remove(mCommandListCItr.key(), MsgSent);
             mutex.unlock();
+            emit BufferCount(mCommandList.size());
+#ifdef qqdebug
+            qDebug() << "emit BufferCount() inside while loop" << endl;
+#endif
             //Send Message
             mSerialPort.write(MsgSent);
+#ifdef qqdebug
+            qDebug() << "Start Sending: " << MsgSent.toHex() << endl;
+#endif
             if (mSerialPort.waitForBytesWritten(mWriteTimeOut)) {
 #ifdef qqdebug
                 qDebug() << "Success Send Command Message !!!" << endl;
@@ -144,8 +159,14 @@ void SerialInterface::clearCommandList()
 
 void SerialInterface::addToCommandList(const APairOfPrioAndCommand &PriorityAndCommand)
 {
+#ifdef qqdebug
+    qDebug() << "inside void addToCommandList()" << endl;
+#endif
     mCommandList.insert(PriorityAndCommand.first, PriorityAndCommand.second);
     emit BufferCount(mCommandList.size());
+#ifdef qqdebug
+    qDebug() << "emit BufferCount() inside addToCommandList" << endl;
+#endif
 }
 
 void SerialInterface::addToCommandList(const AListOfPrioAndCommand &CommandList)
@@ -182,12 +203,18 @@ void SerialInterface::stopThreadJob()
 
 void SerialInterface::startSendReadLoop()
 {
+#ifdef qqdebug
+    qDebug() << "inside startSendReadLoop()" << endl;
+#endif
     mIsContinuous = true;
     emit IsContinuous();
 }
 
 void SerialInterface::pauseSendReadLoop()
 {
+#ifdef qqdebug
+    qDebug() << "inside pauseSendReadLoop()" << endl;
+#endif
     mIsContinuous = false;
     emit IsPaused();
 }

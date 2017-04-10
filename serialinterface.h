@@ -20,6 +20,7 @@ class SerialInterface: public QObject
     quint8 mWriteTimeOut = 100;
     quint16 mReadTimeOut = 300;
     AListOfPrioAndCommand mCommandList;
+    AListOfPrioAndCommand::const_iterator mCommandListCItr;
     QByteArray MsgSent;
     QByteArray MsgRead;
 

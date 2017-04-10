@@ -4,7 +4,7 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    NowUHV2(new BinaryProtocol())
+    NowUHV2(new BinaryProtocol(0))
 {
     ui->setupUi(this);
     listSerialPortsToComboBox();
@@ -143,6 +143,9 @@ void MainWindow::displayMessageRead(const QByteArray &MessageRead)
 
 void MainWindow::displayBufferCount(int Count)
 {
+#ifdef qqdebug
+    qDebug() << "inside void displayBufferCount()" << endl;
+#endif
     ui->label_20->setText(QString::number(Count));
 }
 
@@ -195,11 +198,17 @@ void MainWindow::on_pushButton_2_clicked()
     {
         ui->pushButton_2->setText("HV OFF");
         emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().On().GenMsg()));
+#ifdef qqdebug
+        qDebug() << "emit sigSerialInterfaceAddAPairToCommandList(HV ON)" << endl;
+#endif
     }
     else
     {
         ui->pushButton_2->setText("HV ON");
         emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().Off().GenMsg()));
+#ifdef qqdebug
+        qDebug() << "emit sigSerialInterfaceAddAPairToCommandList(HV OFF)" << endl;
+#endif
     }
 }
 
