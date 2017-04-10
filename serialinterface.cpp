@@ -23,12 +23,17 @@ void SerialInterface::StartThreadJob()
 {
     if (!mIsThreaded)
     {
+#ifdef qqdebug
+        qDebug() << "Start doThreadedJob()" << endl;
+#endif
         mIsThreaded = true;
         doThreadedJob();
     }
     else
     {
-        qDebug() << "Repeated Attempt but Thread Is Already Running !!!";
+#ifdef qqdebug
+        qDebug() << "Repeated Attempt but Thread Is Already Running !!!" << endl;
+#endif
         return;
     }
 }
@@ -36,10 +41,17 @@ void SerialInterface::StartThreadJob()
 void SerialInterface::ReConfigSerialPort(const QString &PortName)
 {
     mPortName = PortName;
+#ifdef qqdebug
+    qDebug() << "Serial Portname Is Changed !!!" << endl;
+#endif
 }
 
 void SerialInterface::doThreadedJob()
 {
+    QSerialPort mSerialPort;
+#ifdef qqdebug
+    qDebug() << "New Serial Port Object Has Been Created !!!" << endl;
+#endif
     while (mIsThreaded)
     {
         qApp->processEvents();        
@@ -58,10 +70,17 @@ void SerialInterface::doThreadedJob()
             mutex.unlock();
             //Connect Serial Port
             if (mSerialPort.open(QIODevice::ReadWrite))
+            {
+#ifdef qqdebug
+                qDebug() << "Serial Port " << mPortName << " Is Connected !!!" << endl;
+#endif
                 emit IsConnected();
+            }
             else
             {
+#ifdef qqdebug
                 qDebug() << "Error: Invalid Serial Port Information" << endl;
+#endif
                 emit InvalidConnection();
                 return;
             }            
@@ -77,6 +96,9 @@ void SerialInterface::doThreadedJob()
             //Send Message
             mSerialPort.write(MsgSent);
             if (mSerialPort.waitForBytesWritten(mWriteTimeOut)) {
+#ifdef qqdebug
+                qDebug() << "Success Send Command Message !!!" << endl;
+#endif
                 emit MessageSent(MsgSent);
                 //Give Signal-Slot mechanism a chance to do things
                 qApp->processEvents();
@@ -89,15 +111,29 @@ void SerialInterface::doThreadedJob()
                     {
                         MsgRead+= mSerialPort.readAll();
                     }
+#ifdef qqdebug
+                    qDebug() << "Success Read Command Message !!!" << endl;
+#endif
                     emit MessageRead(MsgRead);
                 }
                 else
-                    emit ReadTimeOut();
+                {
+#ifdef qqdebug
+                qDebug() << "Error: Reading Message Timed Out !!!" << endl;
+#endif
+                emit ReadTimeOut();
+                }
             }
             else
-                emit WriteTimeOut();
+            {
+#ifdef qqdebug
+                qDebug() << "Error: Sending Message Timed Out !!!" << endl;
+#endif
+            emit WriteTimeOut();
+            }
         }
     }
+    mSerialPort.close();
 }
 
 void SerialInterface::clearCommandList()
@@ -106,13 +142,13 @@ void SerialInterface::clearCommandList()
     emit BufferIsEmpty();
 }
 
-void SerialInterface::addToCommandList(const QPair<quint8, QByteArray> &PriorityAndCommand)
+void SerialInterface::addToCommandList(const APairOfPrioAndCommand &PriorityAndCommand)
 {
     mCommandList.insert(PriorityAndCommand.first, PriorityAndCommand.second);
     emit BufferCount(mCommandList.size());
 }
 
-void SerialInterface::addToCommandList(const QMultiMap<quint8, QByteArray> &CommandList)
+void SerialInterface::addToCommandList(const AListOfPrioAndCommand &CommandList)
 {
     mCommandList += CommandList;
     emit BufferCount(mCommandList.size());
@@ -120,17 +156,28 @@ void SerialInterface::addToCommandList(const QMultiMap<quint8, QByteArray> &Comm
 
 void SerialInterface::disconnectSerialPort()
 {
+#ifdef qqdebug
+    qDebug() << "inside disconnectSerialPort()" << endl;
+#endif
     clearCommandList();
     pauseSendReadLoop();
-    mSerialPort.close();
     emit IsDisconnected();
+#ifdef qqdebug
+    qDebug() << "emit IsDisconnected()" << endl;
+#endif
 }
 
 void SerialInterface::stopThreadJob()
 {
+#ifdef qqdebug
+    qDebug() << "inside stopThreadJob()" << endl;
+#endif
     disconnectSerialPort();
     mIsThreaded = false;
     emit ThreadJobTerminated();
+#ifdef qqdebug
+    qDebug() << "emit ThreadJobTerminated()" << endl;
+#endif
 }
 
 void SerialInterface::startSendReadLoop()

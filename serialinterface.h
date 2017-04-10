@@ -1,11 +1,14 @@
 #ifndef SERIALINTERFACE_H
 #define SERIALINTERFACE_H
-
+#define qqdebug
 #include <QMultiMap>
 #include <QPair>
 #include <QMutex>
 #include <QtSerialPort>
 #include <QSerialPortInfo>
+
+typedef QPair<quint8, QByteArray> APairOfPrioAndCommand;
+typedef QMultiMap<quint8, QByteArray> AListOfPrioAndCommand;
 
 class SerialInterface: public QObject
 {
@@ -13,11 +16,10 @@ class SerialInterface: public QObject
     bool mIsThreaded = false;
     bool mIsContinuous = false;
     QMutex mutex;
-    QString mPortName;
-    QSerialPort mSerialPort;
+    QString mPortName;    
     quint8 mWriteTimeOut = 100;
     quint16 mReadTimeOut = 300;
-    QMultiMap<quint8, QByteArray> mCommandList;
+    AListOfPrioAndCommand mCommandList;
     QByteArray MsgSent;
     QByteArray MsgRead;
 
@@ -32,8 +34,8 @@ public slots:
     void StartThreadJob();
     void ReConfigSerialPort(const QString &PortName);
     void clearCommandList();
-    void addToCommandList(const QPair<quint8, QByteArray> &PriorityAndCommand);
-    void addToCommandList(const QMultiMap<quint8, QByteArray> &CommandList);
+    void addToCommandList(const APairOfPrioAndCommand &PriorityAndCommand);
+    void addToCommandList(const AListOfPrioAndCommand &CommandList);
     void stopThreadJob();
     void startSendReadLoop();
     void pauseSendReadLoop();

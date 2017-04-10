@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QThread *UHV2workerThread = new QThread;
     SerialInterface *UHV2workerSI = new SerialInterface("");
     UHV2workerSI->moveToThread(UHV2workerThread);
+    qRegisterMetaType<APairOfPrioAndCommand>("APairOfPrioAndCommand");
+    qRegisterMetaType<AListOfPrioAndCommand>("AListOfPrioAndCommand");
 
     connect(this, SIGNAL(sigReConfiguretheSerialInterface(QString)),UHV2workerSI, SLOT(ReConfigSerialPort(QString)));
     connect(this, SIGNAL(sigStartSerialInterfaceThreadJob()),UHV2workerSI, SLOT(StartThreadJob()));
@@ -20,13 +22,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(this, SIGNAL(sigSerialInterfaceStartSendReadLoop()), UHV2workerSI, SLOT(startSendReadLoop()));
     connect(this, SIGNAL(sigSerialInterfacePauseSendReadLoop()), UHV2workerSI, SLOT(pauseSendReadLoop()));
-    connect(this, SIGNAL(sigSerialInterfaceAddAPairToCommandList(QPair<quint8,QByteArray>))
-            , UHV2workerSI, SLOT(addToCommandList(QPair<quint8,QByteArray>)));
-    connect(this, SIGNAL(sigSerialInterfaceAddAListToCommandList(QMultiMap<quint8,QByteArray>))
-            , UHV2workerSI, SLOT(addToCommandList(QMultiMap<quint8,QByteArray>)));
+    connect(this, SIGNAL(sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand))
+            , UHV2workerSI, SLOT(addToCommandList(APairOfPrioAndCommand)));
+    connect(this, SIGNAL(sigSerialInterfaceAddAListToCommandList(AListOfPrioAndCommand))
+            , UHV2workerSI, SLOT(addToCommandList(AListOfPrioAndCommand)));
 
     connect(UHV2workerSI, SIGNAL(IsConnected()), this, SLOT(serialInterfaceIsConnected()));
-    connect(UHV2workerSI, SIGNAL(IsDisconnected()), this, SLOT(serialInterfaceIsDisconnected()));
+    //connect(UHV2workerSI, SIGNAL(IsDisconnected()), this, SLOT(serialInterfaceIsDisconnected()));
     connect(UHV2workerSI, SIGNAL(InvalidConnection()), this, SLOT(serialInterfaceIsDisconnected()));
 
     connect(UHV2workerSI, SIGNAL(BufferCount(int)), this, SLOT(displayBufferCount(int)));
@@ -56,11 +58,17 @@ MainWindow::~MainWindow()
 
 void MainWindow::serialInterfaceIsRequested()
 {
+#ifdef qqdebug
+    qDebug() << "inside void serialInterfaceIsRequested()" << endl;
+#endif
     ui->pushButton_SerialConnect->setText("Connecting");
     ui->connectionStatus->setText("- - -");
-    ui->pushButton_SerialConnect->setDisabled(true);
+    ui->pushButton_SerialConnect->setDisabled(true);    
     emit sigReConfiguretheSerialInterface(ui->comboBoxSerial->currentText());
     emit sigStartSerialInterfaceThreadJob();
+#ifdef qqdebug
+    qDebug() << "emit sigReConfiguretheSerialInterface & sigStartSerialInterfaceThreadJob" << endl;
+#endif
 }
 
 void MainWindow::HiddenOutUi(bool IsDisabled)
@@ -86,6 +94,9 @@ void MainWindow::PauseAutoSendnRead()
 
 void MainWindow::serialInterfaceIsConnected()
 {
+#ifdef qqdebug
+    qDebug() << "inside void serialInterfaceIsConnected()" << endl;
+#endif
     ui->pushButton_SerialConnect->setText("Disconnect");
     ui->connectionStatus->setText("Connected");
     ui->pushButton_SerialConnect->setEnabled(true);
@@ -95,11 +106,17 @@ void MainWindow::serialInterfaceIsConnected()
 
 void MainWindow::serialInterfaceIsDisconnected()
 {
+#ifdef qqdebug
+    qDebug() << "inside void serialInterfaceIsDisconnected()" << endl;
+#endif
     ui->connectionStatus->setText("- X -");
     ui->pushButton_SerialConnect->setText("Connect");
     ui->pushButton_SerialConnect->setEnabled(true);
     HiddenOutUi(true);
     emit sigSerialInterfaceClosureRequest();
+#ifdef qqdebug
+    qDebug() << "emit sigSerialInterfaceClosureRequest()" << endl;
+#endif
 }
 
 void MainWindow::serialInterfaceInvalid()
@@ -138,9 +155,19 @@ void MainWindow::listSerialPortsToComboBox()
 void MainWindow::on_pushButton_SerialConnect_clicked()
 {
     if (ui->pushButton_SerialConnect->text() == "Connect")
+    {
+#ifdef qqdebug
+        qDebug() << "Button Connect Is Clicked !" << endl;
+#endif
         serialInterfaceIsRequested();
+    }
     else if (ui->pushButton_SerialConnect->text() == "Disconnect")
+    {
+#ifdef qqdebug
+        qDebug() << "Button Disconnect Is Clicked !" << endl;
+#endif
         serialInterfaceIsDisconnected();
+    }
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -167,12 +194,12 @@ void MainWindow::on_pushButton_2_clicked()
     if (ui->pushButton_2->text() == "HV ON")
     {
         ui->pushButton_2->setText("HV OFF");
-        emit sigSerialInterfaceAddAPairToCommandList(QPair<quint8, QByteArray>(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().On().GenMsg()));
+        emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().On().GenMsg()));
     }
     else
     {
         ui->pushButton_2->setText("HV ON");
-        emit sigSerialInterfaceAddAPairToCommandList(QPair<quint8, QByteArray>(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().Off().GenMsg()));
+        emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox->value()),NowUHV2->HVSwitch().Off().GenMsg()));
     }
 }
 
@@ -195,21 +222,21 @@ void MainWindow::on_spinBox_10_valueChanged(int arg1)
 
 void MainWindow::on_pushButton_6_clicked()
 {
-    if (ui->pushButton_2->text() == "PROT ON")
+    if (ui->pushButton_6->text() == "PROT ON")
     {
-        ui->pushButton_2->setText("PROT OFF");
-        emit sigSerialInterfaceAddAPairToCommandList(QPair<quint8, QByteArray>(quint8(ui->spinBox_8->value()),NowUHV2->ProtectSwitch().On().GenMsg()));
+        ui->pushButton_6->setText("PROT OFF");
+        emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox_8->value()),NowUHV2->ProtectSwitch().On().GenMsg()));
     }
     else
     {
-        ui->pushButton_2->setText("PROT ON");
-        emit sigSerialInterfaceAddAPairToCommandList(QPair<quint8, QByteArray>(quint8(ui->spinBox_8->value()),NowUHV2->ProtectSwitch().Off().GenMsg()));
+        ui->pushButton_6->setText("PROT ON");
+        emit sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand(quint8(ui->spinBox_8->value()),NowUHV2->ProtectSwitch().Off().GenMsg()));
     }
 }
 
 void MainWindow::on_pushButton_3_clicked()
 {
-    QMultiMap<quint8, QByteArray> tmpQMulMap;
+    AListOfPrioAndCommand tmpQMulMap;
     quint8 tmpKey = ui->spinBox_3->value();
     QByteArray tmpVal = NowUHV2->ReadP().GenMsg();
     for (int i = 1; i <= ui->spinBox_2->value(); i++)
@@ -219,7 +246,7 @@ void MainWindow::on_pushButton_3_clicked()
 
 void MainWindow::on_pushButton_4_clicked()
 {
-    QMultiMap<quint8, QByteArray> tmpQMulMap;
+    AListOfPrioAndCommand tmpQMulMap;
     quint8 tmpKey = ui->spinBox_5->value();
     QByteArray tmpVal = NowUHV2->ReadV().GenMsg();
     for (int i = 1; i <= ui->spinBox_4->value(); i++)
@@ -229,7 +256,7 @@ void MainWindow::on_pushButton_4_clicked()
 
 void MainWindow::on_pushButton_5_clicked()
 {
-    QMultiMap<quint8, QByteArray> tmpQMulMap;
+    AListOfPrioAndCommand tmpQMulMap;
     quint8 tmpKey = ui->spinBox_7->value();
     QByteArray tmpVal = NowUHV2->ReadI().GenMsg();
     for (int i = 1; i <= ui->spinBox_6->value(); i++)

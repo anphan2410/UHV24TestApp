@@ -56,8 +56,8 @@ signals:
     void sigSerialInterfaceBufferClear();
     void sigSerialInterfaceStartSendReadLoop();
     void sigSerialInterfacePauseSendReadLoop();
-    void sigSerialInterfaceAddAPairToCommandList(QPair<quint8, QByteArray>);
-    void sigSerialInterfaceAddAListToCommandList(QMultiMap<quint8, QByteArray>);
+    void sigSerialInterfaceAddAPairToCommandList(APairOfPrioAndCommand);
+    void sigSerialInterfaceAddAListToCommandList(AListOfPrioAndCommand);
 };
 
 #endif // MAINWINDOW_H
